@@ -12,6 +12,7 @@ import {fetchAPI} from '../../api/apiUtils';
 import {GET_NESTED_CATEGORY} from '../../api/api';
 import {API_STATES} from '../../utils/constant';
 import Touchable from '../touchable';
+import Button from '../button';
 
 const CardList = ({
   item,
@@ -22,7 +23,8 @@ const CardList = ({
   onJokesSelected,
 }) => {
   const [isLoading, setIsLoading] = React.useState(true);
-  const [data, setData] = React.useState();
+  const [addMoreLoading, setAddMoreLoading] = React.useState(false);
+  const [jokes, setJokes] = React.useState();
   // === VARIABLE
   const headerTitle = `${index + 1}. ${item}`;
 
@@ -33,9 +35,9 @@ const CardList = ({
   }, [activeIndex]);
 
   // == get nested data
-  const getNestedData = async () => {
-    setIsLoading(true);
-    setData();
+  const getNestedData = async nested => {
+    !nested ? setIsLoading(true) : setAddMoreLoading(true);
+    !nested ? setJokes() : null;
 
     // == fetch data
     const {state, data, error} = await fetchAPI(
@@ -45,11 +47,17 @@ const CardList = ({
 
     // == handle state
     if (state == API_STATES.SUCCESS) {
-      setIsLoading(false);
-      setData(data?.jokes);
+      nested ? setAddMoreLoading(false) : setIsLoading(false);
+      nested ? setJokes([...jokes, ...data.jokes]) : setJokes(data?.jokes);
     } else {
-      setIsLoading(false);
-      setData([{joke: data?.causedBy[0]}]);
+      nested ? setAddMoreLoading(false) : setIsLoading(false);
+      nested
+        ? setJokes([
+            ...jokes,
+            {joke: data?.causedBy[0]},
+            {joke: data?.causedBy[0]},
+          ])
+        : setJokes([{joke: data?.causedBy[0]}, {joke: data?.causedBy[0]}]);
     }
   };
 
@@ -74,16 +82,28 @@ const CardList = ({
           <ActivityIndicator />
         </View>
       ) : (
-        <FlatList
-          data={data}
-          renderItem={({item, index}) => (
-            <RenderNested
-              item={item}
-              index={index}
-              onPress={() => onJokesSelected(item?.joke)}
-            />
-          )}
-        />
+        <>
+          <FlatList
+            data={jokes}
+            renderItem={({item, index}) => (
+              <RenderNested
+                key={item + index}
+                item={item}
+                index={index}
+                onPress={() => onJokesSelected(item?.joke)}
+              />
+            )}
+          />
+          {jokes?.length < 6 ? (
+            <View style={styles.buttonContainer}>
+              <Button
+                isLoading={addMoreLoading}
+                title="Add more data"
+                onPress={() => getNestedData(true)}
+              />
+            </View>
+          ) : null}
+        </>
       )}
     </ExpandableView>
   );

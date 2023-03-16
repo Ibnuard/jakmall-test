@@ -23,6 +23,10 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.COLOR_LIGHT_GRAY,
   },
 
+  buttonContainer: {
+    padding: Size.SIZE_8,
+  },
+
   // === TEXT STYLE
 
   textNested: {
